@@ -1,3 +1,8 @@
+#include <DHT.h>
+#include <DHT_U.h>
+
+#include <arduino-timer.h>
+
 /*
     LCD_I2C - Arduino library to control a 16x2 LCD via an I2C adapter based on PCF8574
     Copyright(C) 2020 Blackhack <davidaristi.0504@gmail.com>
@@ -16,61 +21,72 @@
 #include <LCD_I2C.h>
 
 
+
 LCD_I2C lcd(0x27, 16, 2); // Default address of most PCF8574 modules, change according
+
+int sensorPin = 2;
+DHT dht(sensorPin, DHT11);
+
 int buttonPin = 6;
 int curButtonState = 0;
 int lastButtonState = 0;
 
 int screenPos = 0;
 
-int sensorPin = A0;
-
 float sensorVal = 0;
 float voltz = 0;
 float temp = 0;
 
+auto timerTemp = timer_create_default();
+
+void check_temp(){
+  //sensorVal = analogRead(sensorPin);
+  sensorVal = dht.readTemperature();
+  Serial.println(sensorVal);
+}
+
 void setup()
 {
-    Serial.begin(9600);
-    lcd.begin(); // If you are using more I2C devices using the Wire library use lcd.begin(false)
-                 // this stop the library(LCD_I2C) from calling Wire.begin()
-    lcd.backlight();
-    pinMode(buttonPin, INPUT);
-    curButtonState = digitalRead(buttonPin);
+  Serial.begin(9600);
+  lcd.begin(); // If you are using more I2C devices using the Wire library use lcd.begin(false)
+                // this stop the library(LCD_I2C) from calling Wire.begin()
+  lcd.backlight();
+  pinMode(buttonPin, INPUT);
+  curButtonState = digitalRead(buttonPin);
+  timerTemp.every(2000, check_temp);
+  
+  dht.begin();
 }
 
 void loop()
 {
+  //temp = sensorVal * 0.48828125;
+  String s = "Temp: ";
+  s.concat(sensorVal);
+  
+  lastButtonState    = curButtonState;      // save the last state
+  curButtonState = digitalRead(buttonPin); // read new state
 
-    sensorVal = analogRead(sensorPin);
-    voltz = ((sensorVal / 1024) * 5.0);
-    temp = ((voltz - 0.5) * 100.0);
-    String s = "Temp: ";
-    s.concat(temp);
-    
-    lastButtonState    = curButtonState;      // save the last state
-    curButtonState = digitalRead(buttonPin); // read new state
-
-    //lcd.print("     Hello"); // You can make spaces using well... spaces
-    if(screenPos == 0){
-      lcd.setCursor(0, 0); // Or setting the cursor in the desired position.
-      lcd.print("Health: 10");
-      lcd.setCursor(0, 1);
-      lcd.print("Hydration: 10");
-    }else{
-      lcd.setCursor(0,0);
-      Serial.println(sensorVal);
-      lcd.print(s);
-    }
-    if(lastButtonState == HIGH && curButtonState == LOW) {
-    Serial.println("The button is pressed");
-    
-    if(screenPos == 0){
-      screenPos = 1;  
-    }
-    else{
-      screenPos = 0;
-    }
+  //lcd.print("     Hello"); // You can make spaces using well... spaces
+  if(screenPos == 0){
+    lcd.setCursor(0, 0); // Or setting the cursor in the desired position.
+    lcd.print("Health: 10");
+    lcd.setCursor(0, 1);
+    lcd.print("Hydration: 10");
+  }else{
+    lcd.setCursor(0,0);
+    Serial.println(sensorVal);
+    lcd.print(s);
+  }
+  if(lastButtonState == HIGH && curButtonState == LOW) {
+  Serial.println("The button is pressed");
+  
+  if(screenPos == 0){
+    screenPos = 1;  
+  }
+  else{
+    screenPos = 0;
+  }
 
     lcd.clear();
   }
