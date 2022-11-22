@@ -1,6 +1,9 @@
+#include <arduino-timer.h>
 #include <LCD_I2C.h>
 
-int pot = 6;
+auto timer = timer_create_default();
+
+int pot = A0;
 int buttonSwitch = 2;
 int buzzer = 4;
 
@@ -27,9 +30,12 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   LCD.setCursor(0,0);
+  int currentPot = 0;
   
   int buttonState = digitalRead(buttonSwitch);
-  float potState = digitalRead(pot);
+  int potState = (analogRead(pot)/60);
+  int currentPot = potState;
+  Serial.println(potState);
 
   if(buttonState == HIGH){
     tone(buzzer, 1000);
@@ -44,6 +50,7 @@ void loop() {
     }
     
    }else{
+     //Re go through the logic here
     noTone(buzzer);
     if(!timerActive){
       runTimer(true);
